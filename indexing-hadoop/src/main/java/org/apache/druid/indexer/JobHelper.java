@@ -22,6 +22,7 @@ package org.apache.druid.indexer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.FileUtils;
 import org.apache.druid.java.util.common.IAE;
@@ -79,7 +80,9 @@ public class JobHelper
   private static final int NUM_RETRIES = 8;
   private static final int SECONDS_BETWEEN_RETRIES = 2;
   private static final int DEFAULT_FS_BUFFER_SIZE = 1 << 18; // 256KiB
-  private static final Pattern SNAPSHOT_JAR = Pattern.compile(".*-SNAPSHOT(-selfcontained)?\\.jar$");
+  private static final Pattern SNAPSHOT_JAR = Pattern.compile(".*-SNAPSHOT(-selfcontained)?\\.jar$"); 
+  private static final List<String> defaultHadoopJars = ImmutableList.of("hadoop-hdfs-client-3.3.1.jar", "hadoop-mapreduce-client-core-3.3.1.jar", "hadoop-yarn-client-3.3.1.jar", "hadoop-yarn-api-3.3.1.jar", "hadoop-annotations-3.3.1.jar", "hadoop-common-3.3.1.jar", "hadoop-auth-3.3.1.jar", "hadoop-aws-3.3.1.jar", "hadoop-client-3.3.1.jar", "hadoop-mapreduce-client-jobclient-3.3.1.jar", "hadoop-mapreduce-client-common-3.3.1.jar");
+  private static final List<String> hadoopJars = ImmutableList.of();
 
   public static Path distributedClassPath(String path)
   {
@@ -156,23 +159,27 @@ public class JobHelper
 
       final File jarFile = new File(jarFilePath);
       if (jarFile.getName().endsWith(".jar")) {
-        try {
-          RetryUtils.retry(
-              () -> {
-                if (isSnapshot(jarFile)) {
-                  addSnapshotJarToClassPath(jarFile, intermediateClassPath, fs, job);
-                } else {
-                  addJarToClassPath(jarFile, distributedClassPath, intermediateClassPath, fs, job);
-                }
-                return true;
-              },
-              shouldRetryPredicate(),
-              NUM_RETRIES
-          );
-        }
-        catch (Exception e) {
-          throw new RuntimeException(e);
-        }
+	if(hadoopJars.contains(jarFile.getName())){
+	  log.info("Skipping %s from uploading as provided in hadoopProvidedJars", jarFile.getName());
+	} else {
+          try {
+            RetryUtils.retry(
+                () -> {
+                  if (isSnapshot(jarFile)) {
+                    addSnapshotJarToClassPath(jarFile, intermediateClassPath, fs, job);
+                  } else {
+                    addJarToClassPath(jarFile, distributedClassPath, intermediateClassPath, fs, job);
+                  }
+                  return true;
+                },
+                shouldRetryPredicate(),
+                NUM_RETRIES
+            );
+          } 
+	  catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+	}
       }
     }
   }

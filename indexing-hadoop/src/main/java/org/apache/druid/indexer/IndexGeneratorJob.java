@@ -164,7 +164,7 @@ public class IndexGeneratorJob implements Jobby
   {
     try {
       job = Job.getInstance(
-          new Configuration(),
+          new Configuration(false),
           StringUtils.format("%s-index-generator-%s", config.getDataSource(), config.getIntervals())
       );
 
@@ -333,6 +333,9 @@ public class IndexGeneratorJob implements Jobby
         throws IOException, InterruptedException
     {
       super.setup(context);
+      Configuration jobConf = new Configuration(context.getConfiguration());
+      context.getConfiguration().addResource(new Configuration());
+      context.getConfiguration().addResource(jobConf);
       aggregators = config.getSchema().getDataSchema().getAggregators();
 
       if (DatasourcePathSpec.checkIfReindexingAndIsUseAggEnabled(config.getSchema().getIOConfig().getPathSpec())) {
@@ -631,6 +634,12 @@ public class IndexGeneratorJob implements Jobby
     protected void setup(Context context)
     {
       config = HadoopDruidIndexerConfig.fromConfiguration(context.getConfiguration());
+      log.info("Before setting default config %s", context.getConfiguration().toString());
+      Configuration jobConf = new Configuration(context.getConfiguration());
+      context.getConfiguration().addResource(new Configuration());
+      log.info("After setting default config %s", context.getConfiguration().toString());
+      context.getConfiguration().addResource(jobConf);
+      log.info("hadoop.tmp.dir: %s", context.getConfiguration().get("hadoop.tmp.dir"));
 
       aggregators = config.getSchema().getDataSchema().getAggregators();
       combiningAggs = new AggregatorFactory[aggregators.length];
@@ -647,6 +656,8 @@ public class IndexGeneratorJob implements Jobby
     {
       SortableBytes keyBytes = SortableBytes.fromBytesWritable(key);
       Bucket bucket = Bucket.fromGroupKey(keyBytes.getGroupKey()).lhs;
+      log.info("Config in reduce %s", context.getConfiguration().toString());
+      log.info("hadoop.tmp.dir: %s", context.getConfiguration().get("hadoop.tmp.dir"));
 
       final Interval interval = config.getGranularitySpec().bucketInterval(bucket.time).get();
 

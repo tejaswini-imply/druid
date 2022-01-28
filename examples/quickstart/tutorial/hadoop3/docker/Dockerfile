@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Creates pseudo distributed hadoop 3.3.1 with java 8
+# Creates pseudo distributed hadoop 3.0.3 with java 8
 FROM centos:7
 
 USER root
@@ -37,7 +37,7 @@ RUN ssh-keygen -q -N "" -t rsa -f /root/.ssh/id_rsa
 RUN cp /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys
 
 # zulu java 8
-COPY ../../hadoop/docker/setup-zulu-repo.sh /root/setup-zulu-repo.sh
+COPY setup-zulu-repo.sh /root/setup-zulu-repo.sh
 RUN /root/setup-zulu-repo.sh
 RUN yum install -y zulu-8
 
@@ -46,8 +46,8 @@ ENV PATH $PATH:$JAVA_HOME/bin
 
 # hadoop
 ARG APACHE_ARCHIVE_MIRROR_HOST=https://archive.apache.org
-RUN curl -s ${APACHE_ARCHIVE_MIRROR_HOST}/dist/hadoop/core/hadoop-3.3.1/hadoop-3.3.1.tar.gz | tar -xz -C /usr/local/
-RUN cd /usr/local && ln -s ./hadoop-3.3.1 hadoop
+RUN curl -s ${APACHE_ARCHIVE_MIRROR_HOST}/dist/hadoop/core/hadoop-3.0.0/hadoop-3.0.0.tar.gz | tar -xz -C /usr/local/
+RUN cd /usr/local && ln -s ./hadoop-3.0.0 hadoop
 
 ENV HADOOP_HOME /usr/local/hadoop
 ENV HADOOP_COMMON_HOME /usr/local/hadoop
@@ -73,15 +73,15 @@ RUN mkdir $HADOOP_HOME/input
 RUN cp $HADOOP_HOME/etc/hadoop/*.xml $HADOOP_HOME/input
 
 # pseudo distributed
-ADD ../../hadoop/docker/core-site.xml.template $HADOOP_HOME/etc/hadoop/core-site.xml.template
+ADD core-site.xml.template $HADOOP_HOME/etc/hadoop/core-site.xml.template
 RUN sed s/HOSTNAME/localhost/ /usr/local/hadoop/etc/hadoop/core-site.xml.template > /usr/local/hadoop/etc/hadoop/core-site.xml
-ADD ../../hadoop/docker/hdfs-site.xml $HADOOP_HOME/etc/hadoop/hdfs-site.xml
-ADD ../../hadoop/docker/mapred-site.xml $HADOOP_HOME/etc/hadoop/mapred-site.xml
-ADD ../../hadoop/docker/yarn-site.xml $HADOOP_HOME/etc/hadoop/yarn-site.xml
+ADD hdfs-site.xml $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+ADD mapred-site.xml $HADOOP_HOME/etc/hadoop/mapred-site.xml
+ADD yarn-site.xml $HADOOP_HOME/etc/hadoop/yarn-site.xml
 
 RUN $HADOOP_HOME/bin/hdfs namenode -format
 
-ADD ../../hadoop/docker/ssh_config /root/.ssh/config
+ADD ssh_config /root/.ssh/config
 RUN chmod 600 /root/.ssh/config
 RUN chown root:root /root/.ssh/config
 

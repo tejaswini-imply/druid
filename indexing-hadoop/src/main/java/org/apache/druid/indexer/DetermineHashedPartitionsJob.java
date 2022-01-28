@@ -95,7 +95,7 @@ public class DetermineHashedPartitionsJob implements Jobby
        */
       startTime = System.currentTimeMillis();
       groupByJob = Job.getInstance(
-          new Configuration(),
+          new Configuration(false),
           StringUtils.format("%s-determine_partitions_hashed-%s", config.getDataSource(), config.getIntervals())
       );
 
