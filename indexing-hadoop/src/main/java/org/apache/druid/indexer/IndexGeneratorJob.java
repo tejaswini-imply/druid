@@ -169,7 +169,12 @@ public class IndexGeneratorJob implements Jobby
       );
 
       job.getConfiguration().set("io.sort.record.percent", "0.23");
-
+      job.getConfiguration().addResource("yarn-default.xml");
+      job.getConfiguration().addResource("yarn-site.xml");
+      job.getConfiguration().addResource("mapred-site.xml");
+      job.getConfiguration().addResource("hdfs-site.xml");
+      job.getConfiguration().addResource("core-site.xml");
+      job.getConfiguration().set("fs.AbstractFileSystem.hdfs.impl", "org.apache.hadoop.fs.Hdfs");
       JobHelper.injectSystemProperties(job.getConfiguration(), config);
       config.addJobProperties(job);
       // inject druid properties like deep storage bindings

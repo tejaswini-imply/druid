@@ -98,7 +98,12 @@ public class DetermineHashedPartitionsJob implements Jobby
           new Configuration(false),
           StringUtils.format("%s-determine_partitions_hashed-%s", config.getDataSource(), config.getIntervals())
       );
-
+      groupByJob.getConfiguration().addResource("yarn-default.xml");
+      groupByJob.getConfiguration().addResource("yarn-site.xml");
+      groupByJob.getConfiguration().addResource("mapred-site.xml");
+      groupByJob.getConfiguration().addResource("hdfs-site.xml");
+      groupByJob.getConfiguration().addResource("core-site.xml");
+      groupByJob.getConfiguration().set("fs.AbstractFileSystem.hdfs.impl", "org.apache.hadoop.fs.Hdfs");
       JobHelper.injectSystemProperties(groupByJob.getConfiguration(), config);
       config.addJobProperties(groupByJob);
       groupByJob.setMapperClass(DetermineCardinalityMapper.class);
@@ -119,7 +124,7 @@ public class DetermineHashedPartitionsJob implements Jobby
           JobHelper.distributedClassPath(config.makeIntermediatePath()),
           groupByJob
       );
-
+      log.info("Testing Config %s", groupByJob.getConfiguration().toString());
       config.addInputPaths(groupByJob);
       config.intoConfiguration(groupByJob);
       FileOutputFormat.setOutputPath(groupByJob, config.makeGroupedDataDir());
