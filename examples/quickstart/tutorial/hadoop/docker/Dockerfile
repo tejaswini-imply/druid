@@ -46,8 +46,8 @@ ENV PATH $PATH:$JAVA_HOME/bin
 
 # hadoop
 ARG APACHE_ARCHIVE_MIRROR_HOST=https://archive.apache.org
-RUN curl -s ${APACHE_ARCHIVE_MIRROR_HOST}/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz | tar -xz -C /usr/local/
-RUN cd /usr/local && ln -s ./hadoop-2.6.0 hadoop
+RUN curl -s ${APACHE_ARCHIVE_MIRROR_HOST}/dist/hadoop/core/hadoop-2.4.0/hadoop-2.4.0.tar.gz | tar -xz -C /usr/local/
+RUN cd /usr/local && ln -s ./hadoop-2.4.0 hadoop
 
 ENV HADOOP_PREFIX /usr/local/hadoop
 ENV HADOOP_COMMON_HOME /usr/local/hadoop

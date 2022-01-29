@@ -300,6 +300,9 @@ public class DetermineHashedPartitionsJob implements Jobby
         throws IOException, InterruptedException
     {
       super.setup(context);
+      Configuration jobConf = new Configuration(context.getConfiguration());
+      context.getConfiguration().addResource(new Configuration());
+      context.getConfiguration().addResource(jobConf);
       rollupGranularity = getConfig().getGranularitySpec().getQueryGranularity();
       config = HadoopDruidIndexerConfig.fromConfiguration(context.getConfiguration());
       Iterable<Interval> intervals = config.getSegmentGranularIntervals();
