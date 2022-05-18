@@ -34,8 +34,11 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.net.URI;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class CloudObjectInputSource extends AbstractInputSource
@@ -44,17 +47,27 @@ public abstract class CloudObjectInputSource extends AbstractInputSource
   private final List<URI> uris;
   private final List<URI> prefixes;
   private final List<CloudObjectLocation> objects;
+  private final Map<FileFilter.FilterType, List<String>> filters;
 
   public CloudObjectInputSource(
       String scheme,
       @Nullable List<URI> uris,
       @Nullable List<URI> prefixes,
-      @Nullable List<CloudObjectLocation> objects
+      @Nullable List<CloudObjectLocation> objects,
+      @Nullable Map<FileFilter.FilterType, List<String>> filters
   )
   {
     this.uris = uris;
     this.prefixes = prefixes;
     this.objects = objects;
+    this.filters = new HashMap<>();
+    if (filters != null) {
+      filters.forEach((filterType, globs) -> this.filters.put(
+          filterType,
+          globs.stream().map(FileFilter::generateRegex).collect(
+              Collectors.toList())
+      ));
+    }
 
     if (!CollectionUtils.isNullOrEmpty(objects)) {
       throwIfIllegalArgs(!CollectionUtils.isNullOrEmpty(uris) || !CollectionUtils.isNullOrEmpty(prefixes));
@@ -87,6 +100,12 @@ public abstract class CloudObjectInputSource extends AbstractInputSource
     return objects;
   }
 
+  @JsonProperty
+  public Map<FileFilter.FilterType, List<String>> getFilters()
+  {
+    return filters;
+  }
+
   /**
    * Create the correct {@link InputEntity} for this input source given a split on a {@link CloudObjectLocation}. This
    * is called internally by {@link #formattableReader} and operates on the output of {@link #createSplits}.
@@ -113,6 +132,10 @@ public abstract class CloudObjectInputSource extends AbstractInputSource
     if (!CollectionUtils.isNullOrEmpty(uris)) {
       return uris.stream()
                  .map(CloudObjectLocation::new)
+                 .filter(object -> {
+                   final String[] path = object.getPath().split("/");
+                   return FileFilter.fileAllowed(path[path.length - 1], filters);
+                 })
                  .map(object -> new InputSplit<>(Collections.singletonList(object)));
     }
 

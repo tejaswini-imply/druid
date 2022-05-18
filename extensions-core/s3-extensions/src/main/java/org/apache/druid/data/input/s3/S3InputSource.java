@@ -98,7 +98,7 @@ public class S3InputSource extends CloudObjectInputSource
       @JacksonInject AWSCredentialsProvider awsCredentialsProvider
   )
   {
-    super(S3StorageDruidModule.SCHEME, uris, prefixes, objects);
+    super(S3StorageDruidModule.SCHEME, uris, prefixes, objects, null);
     this.inputDataConfig = Preconditions.checkNotNull(inputDataConfig, "S3DataSegmentPusherConfig");
     Preconditions.checkNotNull(s3Client, "s3Client");
     this.s3InputSourceConfig = s3InputSourceConfig;

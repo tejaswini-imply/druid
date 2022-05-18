@@ -77,7 +77,7 @@ public class OssInputSource extends CloudObjectInputSource
       @JsonProperty("properties") @Nullable OssClientConfig inputSourceConfig
   )
   {
-    super(OssStorageDruidModule.SCHEME, uris, prefixes, objects);
+    super(OssStorageDruidModule.SCHEME, uris, prefixes, objects, null);
     this.inputDataConfig = Preconditions.checkNotNull(inputDataConfig, "inputDataConfig");
     Preconditions.checkNotNull(client, "client");
     this.inputSourceConfig = inputSourceConfig;

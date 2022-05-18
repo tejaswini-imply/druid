@@ -71,7 +71,7 @@ public class AzureInputSource extends CloudObjectInputSource
       @JsonProperty("objects") @Nullable List<CloudObjectLocation> objects
   )
   {
-    super(SCHEME, uris, prefixes, objects);
+    super(SCHEME, uris, prefixes, objects, null);
     this.storage = Preconditions.checkNotNull(storage, "AzureStorage");
     this.entityFactory = Preconditions.checkNotNull(entityFactory, "AzureEntityFactory");
     this.azureCloudBlobIterableFactory = Preconditions.checkNotNull(

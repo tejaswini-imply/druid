@@ -29,6 +29,7 @@ import org.apache.druid.data.input.InputSplit;
 import org.apache.druid.data.input.SplitHintSpec;
 import org.apache.druid.data.input.impl.CloudObjectInputSource;
 import org.apache.druid.data.input.impl.CloudObjectLocation;
+import org.apache.druid.data.input.impl.FileFilter;
 import org.apache.druid.data.input.impl.SplittableInputSource;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.storage.google.GoogleInputDataConfig;
@@ -43,6 +44,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,10 +61,11 @@ public class GoogleCloudStorageInputSource extends CloudObjectInputSource
       @JacksonInject GoogleInputDataConfig inputDataConfig,
       @JsonProperty("uris") @Nullable List<URI> uris,
       @JsonProperty("prefixes") @Nullable List<URI> prefixes,
-      @JsonProperty("objects") @Nullable List<CloudObjectLocation> objects
+      @JsonProperty("objects") @Nullable List<CloudObjectLocation> objects,
+      @JsonProperty("filters") @Nullable Map<FileFilter.FilterType, List<String>> filter
   )
   {
-    super(GoogleStorageDruidModule.SCHEME_GS, uris, prefixes, objects);
+    super(GoogleStorageDruidModule.SCHEME_GS, uris, prefixes, objects, filter);
     this.storage = storage;
     this.inputDataConfig = inputDataConfig;
   }
@@ -104,14 +107,20 @@ public class GoogleCloudStorageInputSource extends CloudObjectInputSource
     );
 
     return Streams.sequentialStreamFrom(splitIterator)
-                  .map(objects -> objects.stream().map(this::byteSourceFromStorageObject).collect(Collectors.toList()))
+                  .map(objects -> objects
+                      .stream()
+                      .filter(object -> {
+                        final String[] path = object.getName().split("/");
+                        return FileFilter.fileAllowed(path[path.length - 1], getFilters());
+                      })
+                      .map(this::byteSourceFromStorageObject).collect(Collectors.toList()))
                   .map(InputSplit::new);
   }
 
   @Override
   public SplittableInputSource<List<CloudObjectLocation>> withSplit(InputSplit<List<CloudObjectLocation>> split)
   {
-    return new GoogleCloudStorageInputSource(storage, inputDataConfig, null, null, split.get());
+    return new GoogleCloudStorageInputSource(storage, inputDataConfig, null, null, split.get(), null);
   }
 
   private CloudObjectLocation byteSourceFromStorageObject(final StorageObject storageObject)

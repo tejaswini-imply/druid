@@ -19,6 +19,7 @@
 
 package org.apache.druid.data.input.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -137,5 +138,15 @@ public class CloudObjectLocationTest
     CloudObjectLocation s3ValidBucket = new CloudObjectLocation(URI.create("s3://test_bucket/path/to/path"));
     Assert.assertEquals("test_bucket", s3ValidBucket.getBucket());
     Assert.assertEquals("path/to/path", s3ValidBucket.getPath());
+  }
+
+  @Test
+  public void testFileFilterSerde() throws JsonProcessingException
+  {
+    String json = "{\"filters\": {\n"
+                  + "  \"exclude\": [\"_*\"]\n"
+                  + "}}";
+    FileFilter filter = MAPPER.readValue(json, FileFilter.class);
+    System.out.println(filter);
   }
 }
