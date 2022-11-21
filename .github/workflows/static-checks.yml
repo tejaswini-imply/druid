@@ -100,7 +100,7 @@ jobs:
           npm run spellcheck
 
       - name: web console
-        run: ${MVN} test -pl 'web-console' && (cd web-console && npx retry-cli -n 3 --npx codecov)  # retry in case of network error
+        run: ${MVN} test -pl 'web-console' && (cd web-console && npx retry-cli -n 3 -- npx codecov)  # retry in case of network error
 
       - name: web console end-to-end test
         run: |
