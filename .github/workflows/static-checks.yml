@@ -100,16 +100,33 @@ jobs:
         run: ${MVN} clean -DstrictCompile compile test-compile --fail-at-end ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
 
       - name: "docs"
+        uses: actions/setup-node@v3
+          with:
+            node-version: 16.17.0
         run: |
-          nvm install 16.17.0
           (cd website && npm install)
           cd website
           npm run link-lint
           npm run spellcheck
 
+      - name: "web console"
+        run: ${MVN} test -pl 'web-console' && (cd web-console && npm run codecov)  # retry in case of network error
+
+      - name: "web console end-to-end test"
+        run: |
+          ./.github/scripts/setup_generate_license.sh
+          sudo apt-get update && sudo apt-get install python3 -y
+          curl https://bootstrap.pypa.io/pip/3.5/get-pip.py | sudo -H python3
+          pip3 install wheel  # install wheel first explicitly
+          pip3 install --upgrade pyyaml
+          web-console/script/druid build
+          nvm install 16.17.0
+          web-console/script/druid start
+          (cd web-console && npm run test-e2e)
+          web-console/script/druid stop
+
   license_checks:
     runs-on: ubuntu-latest
-    needs: [ build ]
     strategy:
       matrix:
         HADOOP_PROFILE: [ '', '-Phadoop3' ]
@@ -133,7 +150,6 @@ jobs:
 
   analyze_dependencies:
     runs-on: ubuntu-latest
-    needs: [ build ]
     strategy:
       matrix:
         HADOOP_PROFILE: [ '', '-Phadoop3' ]
@@ -166,7 +182,6 @@ jobs:
           ./.github/scripts/setup_generate_license.sh
           sudo apt-get update && sudo apt-get install python3 -y
           curl https://bootstrap.pypa.io/pip/3.5/get-pip.py | sudo -H python3
-          ./check_test_suite.py && travis_terminate 0 || echo 'Continuing setup'
           pip3 install wheel  # install wheel first explicitly
           pip3 install --upgrade pyyaml
           ${MVN} clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \

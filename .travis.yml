@@ -252,36 +252,6 @@ jobs:
       stage: Tests - phase 2
       jdk: openjdk17
 
-    - name: "web console"
-      install: skip
-      stage: Tests - phase 1
-      script:
-        - ./check_test_suite.py && travis_terminate 0 || ${MVN} test -pl 'web-console'
-      after_success:
-        - (cd web-console && travis_retry npm run codecov)  # retry in case of network error
-
-    - name: "web console end-to-end test"
-      stage: Tests - phase 1
-      before_install: *setup_generate_license
-      install: web-console/script/druid build
-      before_script:
-        - ./check_test_suite.py && travis_terminate 0 || echo 'Starting nvm install...'
-        - nvm install 16.17.0
-        - web-console/script/druid start
-      script: (cd web-console && npm run test-e2e)
-      after_script: web-console/script/druid stop
-
-    - name: "docs"
-      stage: Tests - phase 1
-      before_script:
-        - ./check_test_suite.py && travis_terminate 0 || echo 'Starting nvm install...'
-        - nvm install 16.17.0
-        - (cd website && npm install)
-      script:
-        - cd website
-        - npm run link-lint
-        - npm run spellcheck
-
     - name: "Build and test on ARM64 CPU architecture (1)"
       stage: Tests - phase 2
       arch: arm64-graviton2
