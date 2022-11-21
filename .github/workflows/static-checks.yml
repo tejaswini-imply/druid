@@ -101,8 +101,8 @@ jobs:
 
       - name: "docs"
         uses: actions/setup-node@v3
-          with:
-            node-version: 16.17.0
+        with:
+          node-version: 16.17.0
         run: |
           (cd website && npm install)
           cd website
