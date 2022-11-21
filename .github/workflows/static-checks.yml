@@ -99,20 +99,22 @@ jobs:
         # Strict compilation requires more than 2 GB
         run: ${MVN} clean -DstrictCompile compile test-compile --fail-at-end ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
 
-      - name: "docs"
+      - name: setup node
         uses: actions/setup-node@v3
         with:
           node-version: 16.17.0
+
+      - name: docs
         run: |
           (cd website && npm install)
           cd website
           npm run link-lint
           npm run spellcheck
 
-      - name: "web console"
+      - name: web console
         run: ${MVN} test -pl 'web-console' && (cd web-console && npm run codecov)  # retry in case of network error
 
-      - name: "web console end-to-end test"
+      - name: web console end-to-end test
         run: |
           ./.github/scripts/setup_generate_license.sh
           sudo apt-get update && sudo apt-get install python3 -y
