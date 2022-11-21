@@ -87,18 +87,6 @@ jobs:
           --levels ERROR \
           --scope JavaInspectionsScope
 
-      - name: setup java 11
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '11'
-          cache: 'maven'
-
-      - name: (openjdk11) strict compilation
-        # errorprone requires JDK 11
-        # Strict compilation requires more than 2 GB
-        run: ${MVN} clean -DstrictCompile compile test-compile --fail-at-end ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
-
       - name: setup node
         uses: actions/setup-node@v3
         with:
@@ -112,7 +100,7 @@ jobs:
           npm run spellcheck
 
       - name: web console
-        run: ${MVN} test -pl 'web-console' && (cd web-console && npm run codecov)  # retry in case of network error
+        run: ${MVN} test -pl 'web-console' && (cd web-console && npx retry-cli -n 3 --npx codecov)  # retry in case of network error
 
       - name: web console end-to-end test
         run: |
@@ -126,6 +114,18 @@ jobs:
           web-console/script/druid start
           (cd web-console && npm run test-e2e)
           web-console/script/druid stop
+
+      - name: setup java 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+          cache: 'maven'
+
+      - name: (openjdk11) strict compilation
+        # errorprone requires JDK 11
+        # Strict compilation requires more than 2 GB
+        run: ${MVN} clean -DstrictCompile compile test-compile --fail-at-end ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
 
   license_checks:
     runs-on: ubuntu-latest
