@@ -67,12 +67,10 @@ jobs:
           npm run spellcheck
 
       - name: web console
-        run: ${MVN} test -pl 'web-console'
-
-      - name: upload coverage to codecov
-        uses: codecov/codecov-action@v3
-        with:
-          directory: ./web-console/
+        run: |
+        ${MVN} test -pl 'web-console'
+        npm i retry-cli
+        cd website && retry -n 3 -- npm run codecov
 
       - name: web console end-to-end test
         run: |
