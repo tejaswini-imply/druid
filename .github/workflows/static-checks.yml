@@ -71,7 +71,8 @@ jobs:
 
       - name: upload coverage to codecov
         uses: codecov/codecov-action@v3
-        working-directory: ./web-console
+        with:
+          directory: ./web-console/
 
       - name: web console end-to-end test
         run: |
