@@ -82,7 +82,6 @@ jobs:
           pip3 install wheel  # install wheel first explicitly
           pip3 install --upgrade pyyaml
           web-console/script/druid build
-          nvm install 16.17.0
           web-console/script/druid start
           (cd web-console && npm run test-e2e)
           web-console/script/druid stop
