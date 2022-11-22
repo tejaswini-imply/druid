@@ -69,8 +69,7 @@ jobs:
       - name: web console
         run: |
           ${MVN} test -pl 'web-console'
-          npm i retry-cli
-          cd website && retry -n 3 -- npm run codecov
+          cd website && (npm run codecov || npm run codecov || npm run codecov)
 
       - name: web console end-to-end test
         run: |
