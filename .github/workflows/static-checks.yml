@@ -33,6 +33,7 @@ env:
   MAVEN_SKIP: -P skip-static-checks -Dweb.console.skip=true -Dmaven.javadoc.skip=true
   MAVEN_SKIP_TESTS: -P skip-tests
   MAVEN_OPTS: -Xmx3000m
+  JAVA_VERSION:
 
 jobs:
   static-checks:
