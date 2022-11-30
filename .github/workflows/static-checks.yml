@@ -33,7 +33,7 @@ env:
   MAVEN_SKIP: -P skip-static-checks -Dweb.console.skip=true -Dmaven.javadoc.skip=true
   MAVEN_SKIP_TESTS: -P skip-tests
   MAVEN_OPTS: -Xmx3000m
-  JAVA_VERSION:
+  JAVA_VERSION: 8
 
 jobs:
   static-checks:
@@ -52,7 +52,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: ${{ JAVA_VERSION }}
+          java-version: ${ JAVA_VERSION }
           cache: 'maven'
 
       - name: packaging check
