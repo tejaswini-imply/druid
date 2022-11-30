@@ -47,7 +47,7 @@ jobs:
 
       - run: |
           jdk = ${{matrix.java}}
-          version = ${{jdk:3}}
+          version = ${jdk:3}
           echo $version
 
       - name: setup ${{ matrix.java }}
