@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v3
 
       - run: |
-          echo "JAVA_VERSION=${matrix.java: -1}" >> $GITHUB_ENV
+          echo "JAVA_VERSION=$(${matrix.java}: -1)" >> $GITHUB_ENV
 
       - name: setup ${{ matrix.java }}
         uses: actions/setup-java@v3
