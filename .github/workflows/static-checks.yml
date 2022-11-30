@@ -46,7 +46,7 @@ jobs:
       - uses: bhowell2/github-substring-action@v1
         id: one
         with:
-          value: ${ matrix.java }
+          value: ${{ matrix.java }}
           index_of_str: "jdk"
 
       - name: setup java ${{ matrix.java }}
