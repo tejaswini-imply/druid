@@ -46,8 +46,8 @@ jobs:
         uses: actions/checkout@v3
 
       - run: |
-          export jdk = ${{matrix.java}}
-          export version = ${jdk:3}
+          export jdk=${{matrix.java}}
+          export version=${jdk:3}
           echo $version
 
       - name: setup ${{ matrix.java }}
