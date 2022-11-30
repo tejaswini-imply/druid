@@ -53,7 +53,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: ${steps.one.outputs.substring}
+          java-version: ${{steps.one.outputs.substring}}
           cache: 'maven'
 
       - name: packaging check
