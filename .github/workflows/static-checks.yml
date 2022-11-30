@@ -47,7 +47,8 @@ jobs:
 
       - id: one
         run: |
-          export jdk=${${{matrix.java}}:3}
+          export jdk=${{matrix.java}}
+          export version=${jdk:3}
           echo $jdk
           echo "version={jdk}" >> GITHUB_ENV
           echo $version
