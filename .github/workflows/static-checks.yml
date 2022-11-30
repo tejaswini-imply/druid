@@ -50,7 +50,8 @@ jobs:
           export jdk=${{matrix.java}}
           export version=${jdk:3}
           echo $jdk
-          echo "java_version=$version" >> $GITHUB_ENV
+          echo "java_version=${version}" >> $GITHUB_ENV
+          echo $version
           echo $java_version
           echo ${{ env.java_version }}
 
