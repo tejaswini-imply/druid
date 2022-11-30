@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: checkout branch
         uses: actions/checkout@v3
-      - uses: bhowell2/github-substring-action
+      - uses: bhowell2/github-substring-action@v1
         id: one
         with:
           value: ${{ matrix.java }}
