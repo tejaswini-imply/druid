@@ -59,20 +59,20 @@ jobs:
       - name: license checks
         if: ${{ matrix.java == 'jdk8' }}
         run: |
-          ./.github/scripts/analyze_dependencies_script.sh
+          ./.github/scripts/display_dependency_analysis_error_message.sh
 
       - name: license checks for hadoop3
         if: ${{ matrix.java == 'jdk8' }}
         env:
           HADOOP_PROFILE: -Phadoop3
         run: |
-          ./.github/scripts/analyze_dependencies_script.sh
+          ./.github/scripts/display_dependency_analysis_error_message.sh
 
-      - name: packaging check
-        run: |
-          ./.github/scripts/setup_generate_license.sh
-          ${MVN} clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
-          -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Dweb.console.skip=false -T1C
+#      - name: packaging check
+#        run: |
+#          ./.github/scripts/setup_generate_license.sh
+#          ${MVN} clean install -Prat -Pdist -Pbundle-contrib-exts --fail-at-end \
+#          -pl '!benchmarks' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -Dweb.console.skip=false -T1C
 
       - name: maven install
         if: ${{ matrix.java == 'jdk8' }}
