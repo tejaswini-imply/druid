@@ -59,6 +59,7 @@ jobs:
       - name: license checks
         if: ${{ matrix.java == 'jdk8' }}
         run: |
+          git update-index --chmod=+x ./.github/scripts/license_checks_script.sh
           git ls-files -s .github/scripts/
           ./.github/scripts/license_checks_script.sh
 
