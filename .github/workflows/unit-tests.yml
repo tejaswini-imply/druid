@@ -97,12 +97,12 @@ jobs:
 
       - name: "(openjdk8) other modules test"
         env:
-          MAVEN_PROJECTS: !processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console,!integration-tests,!:druid-it-tools,!:druid-it-image,!:druid-it-cases
+          MAVEN_PROJECTS: '!processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console,!integration-tests,!:druid-it-tools,!:druid-it-image,!:druid-it-cases'
           DRUID_USE_DEFAULT_VALUE_FOR_NULL: true
         run: ./.github/scripts/test_script.sh
 
       - name: "(openjdk8) other modules test (SQL Compatibility)"
         env:
-          MAVEN_PROJECTS: !processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console,!integration-tests,!:druid-it-tools,!:druid-it-image,!:druid-it-cases
+          MAVEN_PROJECTS: '!processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console,!integration-tests,!:druid-it-tools,!:druid-it-image,!:druid-it-cases'
           DRUID_USE_DEFAULT_VALUE_FOR_NULL: false
         run: ./.github/scripts/test_script.sh
