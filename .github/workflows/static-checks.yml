@@ -54,7 +54,6 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ env.java_version }}
-          cache: 'maven'
 
       - name: license checks
         if: ${{ matrix.java == 'jdk8' }}
