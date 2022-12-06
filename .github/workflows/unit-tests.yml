@@ -63,55 +63,46 @@ jobs:
         env:
           MAVEN_PROJECTS: processing
           DRUID_USE_DEFAULT_VALUE_FOR_NULL: true
-        run: |
-          export DRUID_USE_DEFAULT_VALUE_FOR_NULL=true
-          ./.github/scripts/test_script.sh
+        run: ./.github/scripts/test_script.sh
 
       - name: "(openjdk8) processing module test (SQL Compatibility)"
         env:
           MAVEN_PROJECTS: processing
           DRUID_USE_DEFAULT_VALUE_FOR_NULL: false
-        run: |
-          ./.github/scripts/test_script.sh
+        run: ./.github/scripts/test_script.sh
 
       - name: "(openjdk8) indexing modules test"
         env:
           MAVEN_PROJECTS: indexing-hadoop,indexing-service,extensions-core/kafka-indexing-service,extensions-core/kinesis-indexing-service
           DRUID_USE_DEFAULT_VALUE_FOR_NULL: true
-        run: |
-          ./.github/scripts/test_script.sh
+        run: ./.github/scripts/test_script.sh
 
       - name: "(openjdk8) indexing modules test (SQL Compatibility)"
         env:
           MAVEN_PROJECTS: indexing-hadoop,indexing-service,extensions-core/kafka-indexing-service,extensions-core/kinesis-indexing-service
           DRUID_USE_DEFAULT_VALUE_FOR_NULL: false
-          run: |
-            ./.github/scripts/test_script.sh
+        run: /.github/scripts/test_script.sh
 
       - name: "(openjdk8) server module test"
         env:
           MAVEN_PROJECTS: server
           DRUID_USE_DEFAULT_VALUE_FOR_NULL: true
-        run: |
-          ./.github/scripts/test_script.sh
+        run: ./.github/scripts/test_script.sh
 
       - name: "(openjdk8) server module test (SQL Compatibility)"
         env:
           MAVEN_PROJECTS: server
           DRUID_USE_DEFAULT_VALUE_FOR_NULL: false
-        run: |
-          ./.github/scripts/test_script.sh
+        run: ./.github/scripts/test_script.sh
 
       - name: "(openjdk8) other modules test"
         env:
           MAVEN_PROJECTS: !processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console,!integration-tests,!:druid-it-tools,!:druid-it-image,!:druid-it-cases
           DRUID_USE_DEFAULT_VALUE_FOR_NULL: true
-        run: |
-          ./.github/scripts/test_script.sh
+        run: ./.github/scripts/test_script.sh
 
       - name: "(openjdk8) other modules test (SQL Compatibility)"
         env:
           MAVEN_PROJECTS: !processing,!indexing-hadoop,!indexing-service,!extensions-core/kafka-indexing-service,!extensions-core/kinesis-indexing-service,!server,!web-console,!integration-tests,!:druid-it-tools,!:druid-it-image,!:druid-it-cases
           DRUID_USE_DEFAULT_VALUE_FOR_NULL: false
-        run: |
-          ./.github/scripts/test_script.sh
+        run: ./.github/scripts/test_script.sh
