@@ -30,7 +30,7 @@ ${MVN} -pl ${MAVEN_PROJECTS} jacoco:report
 # Add merge target branch to determine diff (see https://github.com/travis-ci/travis-ci/issues/6069).
 # This is not needed for build triggered by tags, since there will be no code diff.
 echo "GIT_BRANCH=${GIT_BRANCH}"  # for debugging
-if [[ ! ${GIT_BRANCH} =~ ^refs\/tags\/v.* ]]
+if [[ ! ${GIT_BRANCH} =~ ^refs\/tags\/.* ]]
 then
   git remote set-branches --add origin ${GIT_BRANCH} && git fetch
 fi
