@@ -56,13 +56,6 @@ jobs:
           java-version: ${{ env.java_version }}
           cache: 'maven'
 
-      - name: maven install
-        if: ${{ matrix.java == 'jdk8' }}
-        run: |
-          echo 'Running Maven install...' &&
-          ${MVN} clean install -q -ff -pl '!distribution,!:druid-it-image,!:druid-it-cases' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T1C &&
-          ${MVN} install -q -ff -pl 'distribution' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
-
       - name: packaging check
         run: |
           ./.github/scripts/setup_generate_license.sh
@@ -79,6 +72,13 @@ jobs:
         # errorprone requires JDK 11
         # Strict compilation requires more than 2 GB
         run: ${MVN} clean -DstrictCompile compile test-compile --fail-at-end ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
+
+      - name: maven install
+        if: ${{ matrix.java == 'jdk8' }}
+        run: |
+          echo 'Running Maven install...' &&
+          ${MVN} clean install -q -ff -pl '!distribution,!:druid-it-image,!:druid-it-cases' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS} -T1C &&
+          ${MVN} install -q -ff -pl 'distribution' ${MAVEN_SKIP} ${MAVEN_SKIP_TESTS}
 
       - name: license checks
         if: ${{ matrix.java == 'jdk8' }}
