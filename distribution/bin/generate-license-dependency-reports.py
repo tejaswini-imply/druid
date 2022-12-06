@@ -75,6 +75,7 @@ def generate_reports(druid_path, tmp_path, exclude_ext, num_threads):
         except subprocess.CalledProcessError as e:
             print("Encountered error [{}] with the following output when finding extensions".format(e))
             print(e.output.decode('utf-8'))
+            return 0
         except Exception as e:
             print("Encountered error [{}] when finding directories".format(e))
 
