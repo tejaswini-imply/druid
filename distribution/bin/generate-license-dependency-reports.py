@@ -61,7 +61,7 @@ def generate_reports(druid_path, tmp_path, exclude_ext, num_threads):
         try:
             extensions_core_path = os.path.join(druid_path, "extensions-core")
             command = "mvn -Dexec.executable='echo' -Dexec.args='${basedir}' exec:exec -q | grep extensions-core | grep -o '[^/]*$'"
-            extension_dirs = subprocess.check_output(command, cwd=druid_path, shell=True).decode().split('\n')[:-1]
+            extension_dirs = subprocess.check_output(command, cwd=druid_path, stderr= subprocess.STDOUT, shell=True).decode().split('\n')[:-1]
             print("Found {} extensions".format(len(extension_dirs)))
             for extension_dir in extension_dirs:
                 print("extension dir: {}".format(extension_dir))
@@ -74,11 +74,11 @@ def generate_reports(druid_path, tmp_path, exclude_ext, num_threads):
                 script_args.append((extension_path, os.path.join(extension_path, "target", "site"), extension_report_dir))
         except subprocess.CalledProcessError as e:
             print("Encountered error [{}] with the following output when finding extensions".format(e))
-            print(e.output.decode('utf-8'))
+            print(e.output)
             return 0
         except Exception as e:
             print("Encountered error [{}] when finding directories".format(e))
-
+    return 0
     print("Generating dependency reports")
 
     if num_threads > 1:
