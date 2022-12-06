@@ -58,27 +58,20 @@ def generate_reports(druid_path, tmp_path, exclude_ext, num_threads):
     script_args = [(druid_path, os.path.join(druid_path, "distribution", "target", "site"), license_core_path)]
 
     if not exclude_ext:
-        try:
-            extensions_core_path = os.path.join(druid_path, "extensions-core")
-            command = "mvn -Dexec.executable='echo' -Dexec.args='${basedir}' exec:exec -q"
-            extension_dirs = subprocess.check_output(command, cwd=druid_path, stderr= subprocess.STDOUT, shell=True).decode().split('\n')[:-1]
-            print("Found {} extensions".format(len(extension_dirs)))
-            for extension_dir in extension_dirs:
-                print("extension dir: {}".format(extension_dir))
-                extension_path = os.path.join(extensions_core_path, extension_dir)
-                if not os.path.isdir(extension_path):
-                    print("{} is not a directory".format(extension_path))
-                    continue
+        extensions_core_path = os.path.join(druid_path, "extensions-core")
+        command = "mvn -Dexec.executable='echo' -Dexec.args='${basedir}' exec:exec -q | grep extensions-core | grep -o '[^/]*$'"
+        extension_dirs = subprocess.check_output(command, cwd=druid_path, shell=True).decode().split('\n')[:-1]
+        print("Found {} extensions".format(len(extension_dirs)))
+        for extension_dir in extension_dirs:
+            print("extension dir: {}".format(extension_dir))
+            extension_path = os.path.join(extensions_core_path, extension_dir)
+            if not os.path.isdir(extension_path):
+                print("{} is not a directory".format(extension_path))
+                continue
 
-                extension_report_dir = "{}/{}".format(license_ext_path, extension_dir)
-                script_args.append((extension_path, os.path.join(extension_path, "target", "site"), extension_report_dir))
-        except subprocess.CalledProcessError as e:
-            print("Encountered error [{}] with the following output when finding extensions".format(e))
-            print(e.output)
-            return 0
-        except Exception as e:
-            print("Encountered error [{}] when finding directories".format(e))
-    return 0
+            extension_report_dir = "{}/{}".format(license_ext_path, extension_dir)
+            script_args.append((extension_path, os.path.join(extension_path, "target", "site"), extension_report_dir))
+
     print("Generating dependency reports")
 
     if num_threads > 1:
