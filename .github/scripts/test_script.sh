@@ -27,7 +27,7 @@ sh -c "dmesg | egrep -i '(oom|out of memory|kill process|killed).*' -C 1 || exit
 free -m
 ${MVN} -pl ${MAVEN_PROJECTS} jacoco:report
 
-# Add merge target branch to determine diff (see https://github.com/travis-ci/travis-ci/issues/6069).
+# Add merge target branch to determine diff.
 # This is not needed for build triggered by tags, since there will be no code diff.
 echo "GIT_BRANCH=${GIT_BRANCH}"  # for debugging
 if [[ ! ${GIT_BRANCH} =~ ^refs\/tags\/.* ]]
@@ -39,10 +39,7 @@ fi
 # either exclude (starts with "!") or include (does not start with "!"), so both cases need to be handled.
 # If the build is triggered by a tag, an error will be printed, but `all_files` will be correctly set to empty
 # so that the coverage check is skipped.
-echo "diff between git_branch and head"
-echo $(git diff --name-only origin/${GIT_BRANCH}...HEAD)
 all_files="$(git diff --name-only origin/${GIT_BRANCH}...HEAD | grep "\.java$" || [[ $? == 1 ]])"
-echo ${all_files}
 
 for f in ${all_files}
 do
@@ -69,7 +66,7 @@ done
 if [ -n "${project_files}" ]
 then
   { for i in 1 2 3; do npm install @connectis/diff-test-coverage@1.5.3 && break || sleep 15; done }
-  git diff origin/${TRAVIS_BRANCH}...HEAD -- ${project_files} |
+  git diff origin/${GIT_BRANCH}...HEAD -- ${project_files} |
   node_modules/.bin/diff-test-coverage \
   --coverage "**/target/site/jacoco/jacoco.xml" \
   --type jacoco \
