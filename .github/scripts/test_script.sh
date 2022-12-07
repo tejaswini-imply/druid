@@ -39,7 +39,10 @@ fi
 # either exclude (starts with "!") or include (does not start with "!"), so both cases need to be handled.
 # If the build is triggered by a tag, an error will be printed, but `all_files` will be correctly set to empty
 # so that the coverage check is skipped.
+echo "diff between git_branch and head"
+echo $(git diff --name-only origin/${GIT_BRANCH}...HEAD)
 all_files="$(git diff --name-only origin/${GIT_BRANCH}...HEAD | grep "\.java$" || [[ $? == 1 ]])"
+echo ${all_files}
 
 for f in ${all_files}
 do
