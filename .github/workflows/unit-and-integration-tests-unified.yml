@@ -150,4 +150,4 @@ jobs:
       - name: Print needs context
         env:
           NEEDS_CONTEXT: ${{ toJson(needs) }}
-          run: echo "$NEEDS_CONTEXT"
+        run: echo "$NEEDS_CONTEXT"
