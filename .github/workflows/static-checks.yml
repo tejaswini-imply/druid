@@ -185,8 +185,8 @@ jobs:
           web-console/script/druid stop
 
   retry-on-cancelation:
-    needs: [ static-checks, web-checks, intellij-inspections ]
-    #    if: ${{ always() && contains(needs.*.result, 'cancelled') }}
+    needs: [ static-checks, web-checks ]
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Print job status
