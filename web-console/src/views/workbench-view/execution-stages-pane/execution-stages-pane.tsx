@@ -49,6 +49,7 @@ import {
   formatInteger,
   formatPercent,
   oneOf,
+  prettyFormatIsoDate,
   twoLines,
 } from '../../../utils';
 
@@ -220,7 +221,7 @@ export const ExecutionStagesPane = React.memo(function ExecutionStagesPane(
             accessor: d => d.index,
             width: 100,
             Cell({ value }) {
-              const taskId = `${execution.id}-worker${value}`;
+              const taskId = `${execution.id}-worker${value}_0`;
               return (
                 <TableClickableCell
                   hoverIcon={IconNames.SHARE}
@@ -685,7 +686,7 @@ ${title} uncompressed size: ${formatBytesCompact(
             if (!value) return null;
             return (
               <div title={value + (duration ? `/${formatDurationWithMs(duration)}` : '')}>
-                <div>{value.replace('T', ' ').replace(/\.\d\d\dZ$/, '')}</div>
+                <div>{prettyFormatIsoDate(value)}</div>
                 <div>{duration ? formatDurationDynamic(duration) : ''}</div>
               </div>
             );

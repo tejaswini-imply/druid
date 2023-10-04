@@ -186,6 +186,95 @@ public class MSQInsertTest extends MSQTestBase
   }
 
   @Test
+  public void testInsertWithUnnestInline()
+  {
+    List<Object[]> expectedRows = ImmutableList.of(
+        new Object[]{1692226800000L, 1L},
+        new Object[]{1692226800000L, 2L},
+        new Object[]{1692226800000L, 3L}
+    );
+
+    RowSignature rowSignature = RowSignature.builder()
+                                            .add("__time", ColumnType.LONG)
+                                            .add("d", ColumnType.LONG)
+                                            .build();
+
+
+    testIngestQuery().setSql(
+                         "insert into foo1 select TIME_PARSE('2023-08-16T23:00') as __time, d from UNNEST(ARRAY[1,2,3]) as unnested(d) PARTITIONED BY ALL")
+                     .setQueryContext(context)
+                     .setExpectedResultRows(expectedRows)
+                     .setExpectedDataSource("foo1")
+                     .setExpectedRowSignature(rowSignature)
+                     .verifyResults();
+
+  }
+
+  @Test
+  public void testInsertWithUnnest()
+  {
+    List<Object[]> expectedRows = ImmutableList.of(
+        new Object[]{946684800000L, "a"},
+        new Object[]{946684800000L, "b"},
+        new Object[]{946771200000L, "b"},
+        new Object[]{946771200000L, "c"},
+        new Object[]{946857600000L, "d"},
+        new Object[]{978307200000L, NullHandling.sqlCompatible() ? "" : null},
+        new Object[]{978393600000L, null},
+        new Object[]{978480000000L, null}
+    );
+
+    RowSignature rowSignature = RowSignature.builder()
+                                            .add("__time", ColumnType.LONG)
+                                            .add("d", ColumnType.STRING)
+                                            .build();
+
+
+    testIngestQuery().setSql(
+                         "insert into foo1 select __time, d from foo,UNNEST(MV_TO_ARRAY(dim3)) as unnested(d) PARTITIONED BY ALL")
+                     .setQueryContext(context)
+                     .setExpectedResultRows(expectedRows)
+                     .setExpectedDataSource("foo1")
+                     .setExpectedRowSignature(rowSignature)
+                     .verifyResults();
+
+  }
+
+  @Test
+  public void testInsertWithUnnestWithVirtualColumns()
+  {
+    List<Object[]> expectedRows = ImmutableList.of(
+        new Object[]{946684800000L, 1.0f},
+        new Object[]{946684800000L, 1.0f},
+        new Object[]{946771200000L, 2.0f},
+        new Object[]{946771200000L, 2.0f},
+        new Object[]{946857600000L, 3.0f},
+        new Object[]{946857600000L, 3.0f},
+        new Object[]{978307200000L, 4.0f},
+        new Object[]{978307200000L, 4.0f},
+        new Object[]{978393600000L, 5.0f},
+        new Object[]{978393600000L, 5.0f},
+        new Object[]{978480000000L, 6.0f},
+        new Object[]{978480000000L, 6.0f}
+    );
+
+    RowSignature rowSignature = RowSignature.builder()
+                                            .add("__time", ColumnType.LONG)
+                                            .add("d", ColumnType.FLOAT)
+                                            .build();
+
+
+    testIngestQuery().setSql(
+                         "insert into foo1 select __time, d from foo,UNNEST(ARRAY[m1,m2]) as unnested(d) PARTITIONED BY ALL")
+                     .setQueryContext(context)
+                     .setExpectedResultRows(expectedRows)
+                     .setExpectedDataSource("foo1")
+                     .setExpectedRowSignature(rowSignature)
+                     .verifyResults();
+
+  }
+
+  @Test
   public void testInsertOnExternalDataSource() throws IOException
   {
     final File toRead = MSQTestFileUtils.getResourceAsTemporaryFile(temporaryFolder, this, "/wikipedia-sampled.json");
@@ -438,6 +527,40 @@ public class MSQInsertTest extends MSQTestBase
   }
 
   @Test
+  public void testInsertOnFoo1WithTimeAggregatorAndMultipleWorkers()
+  {
+    Map<String, Object> localContext = new HashMap<>(context);
+    localContext.put(MultiStageQueryContext.CTX_TASK_ASSIGNMENT_STRATEGY, WorkerAssignmentStrategy.MAX.name());
+    localContext.put(MultiStageQueryContext.CTX_MAX_NUM_TASKS, 4);
+
+    RowSignature rowSignature = RowSignature.builder()
+                                            .add("__time", ColumnType.LONG)
+                                            .build();
+
+    testIngestQuery().setSql(
+                         "INSERT INTO foo1 "
+                         + "SELECT MILLIS_TO_TIMESTAMP((SUM(CAST(\"m1\" AS BIGINT)))) AS __time "
+                         + "FROM foo "
+                         + "PARTITIONED BY DAY"
+                     )
+                     .setExpectedDataSource("foo1")
+                     .setExpectedRowSignature(rowSignature)
+                     .setQueryContext(localContext)
+                     .setExpectedSegment(
+                         ImmutableSet.of(
+                             SegmentId.of("foo1", Intervals.of("1970-01-01/P1D"), "test", 0)
+                         )
+                     )
+                     .setExpectedResultRows(
+                         ImmutableList.of(
+                             new Object[]{21L}
+                         )
+                     )
+                     .verifyResults();
+  }
+
+
+  @Test
   public void testInsertOnFoo1WithTimePostAggregator()
   {
     RowSignature rowSignature = RowSignature.builder()
@@ -647,12 +770,12 @@ public class MSQInsertTest extends MSQTestBase
                      .setExpectedResultRows(
                          NullHandling.replaceWithDefault() ?
                          ImmutableList.of(
-                             new Object[]{0L, new Object[]{null}},
+                             new Object[]{0L, null},
                              new Object[]{0L, new Object[]{"a", "b"}},
                              new Object[]{0L, new Object[]{"b", "c"}},
                              new Object[]{0L, new Object[]{"d"}}
                          ) : ImmutableList.of(
-                             new Object[]{0L, new Object[]{null}},
+                             new Object[]{0L, null},
                              new Object[]{0L, new Object[]{"a", "b"}},
                              new Object[]{0L, new Object[]{""}},
                              new Object[]{0L, new Object[]{"b", "c"}},

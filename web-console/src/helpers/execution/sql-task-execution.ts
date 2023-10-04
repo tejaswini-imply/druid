@@ -19,7 +19,7 @@
 import { L, QueryResult } from '@druid-toolkit/query';
 import type { AxiosResponse, CancelToken } from 'axios';
 
-import type { AsyncStatusResponse, QueryContext } from '../../druid-models';
+import type { AsyncStatusResponse, MsqTaskPayloadResponse, QueryContext } from '../../druid-models';
 import { Execution } from '../../druid-models';
 import { Api } from '../../singletons';
 import {
@@ -36,10 +36,18 @@ const USE_TASK_REPORTS = true;
 const WAIT_FOR_SEGMENT_METADATA_TIMEOUT = 180000; // 3 minutes to wait until segments appear in the metadata
 const WAIT_FOR_SEGMENT_LOAD_TIMEOUT = 540000; // 9 minutes to wait for segments to load at all
 
+// some executionMode has to be set on the /druid/v2/sql/statements API
+function ensureExecutionModeIsSet(context: QueryContext | undefined): QueryContext {
+  if (typeof context?.executionMode === 'string') return context;
+  return {
+    ...context,
+    executionMode: 'async',
+  };
+}
+
 export interface SubmitTaskQueryOptions {
   query: string | Record<string, any>;
   context?: QueryContext;
-  skipResults?: boolean;
   prefixLines?: number;
   cancelToken?: CancelToken;
   preserveOnTermination?: boolean;
@@ -49,15 +57,7 @@ export interface SubmitTaskQueryOptions {
 export async function submitTaskQuery(
   options: SubmitTaskQueryOptions,
 ): Promise<Execution | IntermediateQueryState<Execution>> {
-  const {
-    query,
-    context,
-    skipResults,
-    prefixLines,
-    cancelToken,
-    preserveOnTermination,
-    onSubmitted,
-  } = options;
+  const { query, context, prefixLines, cancelToken, preserveOnTermination, onSubmitted } = options;
 
   let sqlQuery: string;
   let jsonQuery: Record<string, any>;
@@ -65,26 +65,22 @@ export async function submitTaskQuery(
     sqlQuery = query;
     jsonQuery = {
       query: sqlQuery,
+      context: ensureExecutionModeIsSet(context),
       resultFormat: 'array',
       header: true,
       typesHeader: true,
       sqlTypesHeader: true,
-      context: context,
     };
   } else {
     sqlQuery = query.query;
 
-    if (context) {
-      jsonQuery = {
-        ...query,
-        context: {
-          ...(query.context || {}),
-          ...context,
-        },
-      };
-    } else {
-      jsonQuery = query;
-    }
+    jsonQuery = {
+      ...query,
+      context: ensureExecutionModeIsSet({
+        ...query.context,
+        ...context,
+      }),
+    };
   }
 
   let sqlAsyncResp: AxiosResponse<AsyncStatusResponse>;
@@ -116,10 +112,6 @@ export async function submitTaskQuery(
 
   if (onSubmitted) {
     onSubmitted(execution.id);
-  }
-
-  if (skipResults) {
-    execution = execution.changeDestination({ type: 'download' });
   }
 
   execution = await updateExecutionWithDatasourceLoadedIfNeeded(execution, cancelToken);
@@ -173,7 +165,7 @@ export async function updateExecutionWithTaskIfNeeded(
 
 export async function getTaskExecution(
   id: string,
-  taskPayloadOverride?: { payload: any; task: string },
+  taskPayloadOverride?: MsqTaskPayloadResponse,
   cancelToken?: CancelToken,
 ): Promise<Execution> {
   const encodedId = Api.encodePath(id);
@@ -216,7 +208,7 @@ export async function getTaskExecution(
     execution = Execution.fromAsyncStatus(statusResp.data);
   }
 
-  let taskPayload: any = taskPayloadOverride;
+  let taskPayload = taskPayloadOverride;
   if (USE_TASK_PAYLOAD && !taskPayload) {
     try {
       taskPayload = (
@@ -230,6 +222,22 @@ export async function getTaskExecution(
   }
   if (taskPayload) {
     execution = execution.updateWithTaskPayload(taskPayload);
+  }
+
+  // Still have to pull the destination page info from the async status, do this in a best effort way since the statements API may have permission errors
+  if (execution.status === 'SUCCESS' && !execution.destinationPages) {
+    try {
+      const statusResp = await Api.instance.get<AsyncStatusResponse>(
+        `/druid/v2/sql/statements/${encodedId}`,
+        {
+          cancelToken,
+        },
+      );
+
+      execution = execution.updateWithAsyncStatus(statusResp.data);
+    } catch (e) {
+      if (Api.isNetworkError(e)) throw e;
+    }
   }
 
   if (execution.hasPotentiallyStuckStage()) {

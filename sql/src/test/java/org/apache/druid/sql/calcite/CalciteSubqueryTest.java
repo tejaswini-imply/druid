@@ -132,7 +132,7 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
                                     .build()
                             )
                         )
-                        .setDimFilter(bound("a0", "0", null, true, false, null, StringComparators.NUMERIC))
+                        .setDimFilter(range("a0", ColumnType.LONG, 0L, null, true, false))
                         .setInterval(querySegmentSpec(Filtration.eternity()))
                         .setGranularity(Granularities.ALL)
                         .setAggregatorSpecs(aggregators(
@@ -182,7 +182,7 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
                                                             .setDataSource(CalciteTests.DATASOURCE1)
                                                             .setInterval(querySegmentSpec(Filtration.eternity()))
                                                             .setGranularity(Granularities.ALL)
-                                                            .setDimFilter(not(selector("dim1", "", null)))
+                                                            .setDimFilter(not(equality("dim1", "", ColumnType.STRING)))
                                                             .setDimensions(
                                                                 dimensions(
                                                                     new ExtractionDimensionSpec(
@@ -258,7 +258,7 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
                                 .setAggregatorSpecs(
                                     new FilteredAggregatorFactory(
                                         new CountAggregatorFactory("a0"),
-                                        not(selector("d0", null, null))
+                                        notNull("d0")
                                     )
                                 )
                                 .setContext(QUERY_CONTEXT_DEFAULT)
@@ -282,7 +282,7 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
                                 .setAggregatorSpecs(
                                     new FilteredAggregatorFactory(
                                         new CountAggregatorFactory("a0"),
-                                        not(selector("d0", null, null))
+                                        notNull("d0")
                                     )
                                 )
                                 .setContext(QUERY_CONTEXT_DEFAULT)
@@ -329,7 +329,7 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
                               "j0.",
                               "(\"dim2\" == \"j0.dim2\")",
                               JoinType.INNER,
-                              bound("dim2", "a", "a", false, false, null, null)
+                              range("dim2", ColumnType.STRING, "a", "a", false, false)
                           ),
                           new QueryDataSource(
                               newScanQueryBuilder().dataSource(CalciteTests.DATASOURCE1)
@@ -344,14 +344,23 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
                       )
                   )
                   .intervals(querySegmentSpec(Filtration.eternity()))
-                  .filters(not(selector("dim1", "z", new SubstringDimExtractionFn(0, 1))))
+                  .filters(
+                      NullHandling.replaceWithDefault()
+                      ? not(selector("dim1", "z", new SubstringDimExtractionFn(0, 1)))
+                      : expressionFilter("(substring(\"dim1\", 0, 1) != 'z')")
+                  )
                   .granularity(Granularities.ALL)
                   .aggregators(aggregators(new CountAggregatorFactory("a0")))
                   .context(queryContextModified)
                   .build()
         ),
-        ImmutableList.of(
+        NullHandling.replaceWithDefault()
+        ? ImmutableList.of(
             new Object[]{8L}
+        )
+        // in sql compatible mode, expression filter correctly does not match null values...
+        : ImmutableList.of(
+            new Object[]{4L}
         )
     );
   }
@@ -481,7 +490,7 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
                                         .setDataSource(CalciteTests.DATASOURCE1)
                                         .setInterval(querySegmentSpec(Filtration.eternity()))
                                         .setGranularity(Granularities.ALL)
-                                        .setDimFilter(selector("dim2", "abc", null))
+                                        .setDimFilter(equality("dim2", "abc", ColumnType.STRING))
                                         .setDimensions(dimensions(
                                             new DefaultDimensionSpec("dim1", "d0"),
                                             new DefaultDimensionSpec("dim2", "d1")
@@ -490,7 +499,7 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
                                         .setPostAggregatorSpecs(
                                             ImmutableList.of(expressionPostAgg("p0", "'abc'"))
                                         )
-                                        .setHavingSpec(having(selector("a0", "1", null)))
+                                        .setHavingSpec(having(equality("a0", 1L, ColumnType.LONG)))
                                         .setContext(QUERY_CONTEXT_DEFAULT)
                                         .build()
                         ),
@@ -561,7 +570,7 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
                                 new LongSumAggregatorFactory("_a2:sum", "a0"),
                                 new FilteredAggregatorFactory(
                                     new CountAggregatorFactory("_a2:count"),
-                                    not(selector("a0", null, null))
+                                    notNull("a0")
                                 ),
                                 new LongMaxAggregatorFactory("_a3", "d0"),
                                 new CountAggregatorFactory("_a4")
@@ -697,7 +706,7 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
                                       .build()
                               )
                           )
-                          .setDimFilter(bound("a0", "0", null, true, false, null, StringComparators.NUMERIC))
+                          .setDimFilter(range("a0", ColumnType.LONG, 0L, null, true, false))
                           .setInterval(querySegmentSpec(Filtration.eternity()))
                           .setGranularity(Granularities.ALL)
                           .setAggregatorSpecs(aggregators(
@@ -940,6 +949,92 @@ public class CalciteSubqueryTest extends BaseCalciteQueryTest
         ImmutableList.of(
             new Object[]{36L}
         )
+    );
+  }
+
+  @Test
+  public void testJoinWithSubqueries()
+  {
+    cannotVectorize();
+
+    List<Object[]> results = new ArrayList<>(ImmutableList.of(
+        new Object[]{"", NullHandling.defaultStringValue()},
+        new Object[]{"10.1", NullHandling.defaultStringValue()},
+        new Object[]{"2", NullHandling.defaultStringValue()},
+        new Object[]{"1", NullHandling.defaultStringValue()},
+        new Object[]{"def", NullHandling.defaultStringValue()},
+        new Object[]{"abc", NullHandling.defaultStringValue()}
+    ));
+
+    if (NullHandling.replaceWithDefault()) {
+      results.add(new Object[]{NullHandling.defaultStringValue(), NullHandling.defaultStringValue()});
+    }
+
+
+    testQuery(
+        "SELECT a.dim1, b.dim2\n"
+        + "FROM (SELECT na.dim1 as dim1, nb.dim2 as dim2 FROM foo na LEFT JOIN foo2 nb ON na.dim1 = nb.dim1) a\n"
+        + "FULL OUTER JOIN\n"
+        + "(SELECT nc.dim1 as dim1, nd.dim2 as dim2 FROM foo nc LEFT JOIN foo2 nd ON nc.dim1 = nd.dim1) b\n"
+        + "ON a.dim1 = b.dim1",
+        queryContext,
+        ImmutableList.of(
+            newScanQueryBuilder()
+                .dataSource(
+                    JoinDataSource.create(
+                        JoinDataSource.create(
+                            new TableDataSource("foo"),
+                            new QueryDataSource(
+                                newScanQueryBuilder()
+                                    .dataSource("foo2")
+                                    .columns("dim1")
+                                    .eternityInterval()
+                                    .build()
+                            ),
+                            "j0.",
+                            "(\"dim1\" == \"j0.dim1\")",
+                            JoinType.LEFT,
+                            null,
+                            ExprMacroTable.nil(),
+                            CalciteTests.createJoinableFactoryWrapper()
+                        ),
+                        new QueryDataSource(
+                            newScanQueryBuilder()
+                                .dataSource(
+                                    JoinDataSource.create(
+                                        new TableDataSource("foo"),
+                                        new QueryDataSource(
+                                            newScanQueryBuilder()
+                                                .dataSource("foo2")
+                                                .columns("dim1", "dim2")
+                                                .eternityInterval()
+                                                .build()
+                                        ),
+                                        "j0.",
+                                        "(\"dim1\" == \"j0.dim1\")",
+                                        JoinType.LEFT,
+                                        null,
+                                        ExprMacroTable.nil(),
+                                        CalciteTests.createJoinableFactoryWrapper()
+                                    )
+                                )
+                                .columns("dim1", "j0.dim2")
+                                .eternityInterval()
+                                .build()
+                        ),
+                        "_j0.",
+                        "(\"dim1\" == \"_j0.dim1\")",
+                        JoinType.FULL,
+                        null,
+                        ExprMacroTable.nil(),
+                        CalciteTests.createJoinableFactoryWrapper()
+                    )
+                )
+                .columns("_j0.j0.dim2", "dim1")
+                .eternityInterval()
+                .build()
+        ),
+        results
     );
   }
 }
